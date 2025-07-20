@@ -217,6 +217,44 @@ export default function AlgorithmicArtGenerator() {
     [parameters],
   )
 
+  const drawStarPattern = useCallback(
+    (ctx: CanvasRenderingContext2D, time: number) => {
+      const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters
+      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const { width, height } = ctx.canvas
+
+      const points = 5 + Math.floor(complexity)
+      const step = Math.PI / points
+
+      for (let i = 0; i < shapeCount; i++) {
+        const angle = (i / shapeCount) * Math.PI * 2 + time * animationSpeed * 0.01
+        const radius = Math.min(width, height) * 0.35
+        const x = width / 2 + Math.cos(angle) * radius
+        const y = height / 2 + Math.sin(angle) * radius
+
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(angle + time * rotationSpeed * 0.01)
+        ctx.globalAlpha = opacity
+        ctx.fillStyle = colors[i % colors.length]
+
+        const outer = shapeSize
+        const inner = shapeSize * 0.5
+        ctx.beginPath()
+        for (let j = 0; j < points * 2; j++) {
+          const r = j % 2 === 0 ? outer : inner
+          const a = j * step
+          if (j === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+          else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r)
+        }
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
+      }
+    },
+    [parameters],
+  )
+
   /* ---------- Fractal Drawing Functions ---------- */
 
   const drawMandelbrotFractal = useCallback(
@@ -654,6 +692,9 @@ export default function AlgorithmicArtGenerator() {
         case "lines":
           drawLinePattern(ctx, currentTime)
           break
+        case "stars":
+          drawStarPattern(ctx, time)
+          break
         case "spiral":
           drawSpiral(ctx, currentTime)
           break
@@ -662,7 +703,7 @@ export default function AlgorithmicArtGenerator() {
           break
       }
     },
-    [parameters, zoomLevel, drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawFractal],
+    [parameters, zoomLevel, drawCirclePattern, drawTrianglePattern, drawLinePattern, drawStarPattern, drawSpiral, drawFractal],
   )
 
   /* ---------- Animation Loop ---------- */
@@ -711,7 +752,7 @@ export default function AlgorithmicArtGenerator() {
   /* ---------- Utility Actions ---------- */
 
   const randomizeParameters = () => {
-    const patterns = ["circles", "triangles", "lines", "spiral", "fractal"]
+    const patterns = ["circles", "triangles", "lines", "stars", "spiral", "fractal"]
     const paletteKeys = [
       ...Object.keys(colorPalettes),
       ...Object.keys(customPalettes).map((n) => `custom:${n}`),
@@ -847,6 +888,7 @@ export default function AlgorithmicArtGenerator() {
                       <SelectItem value="circles">Circles</SelectItem>
                       <SelectItem value="triangles">Triangles</SelectItem>
                       <SelectItem value="lines">Lines</SelectItem>
+                      <SelectItem value="stars">Stars</SelectItem>
                       <SelectItem value="spiral">Spiral</SelectItem>
                       <SelectItem value="fractal">Fractal</SelectItem>
                     </SelectContent>
