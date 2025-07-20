@@ -23,6 +23,8 @@ interface ArtParameters {
   opacity: number
   complexity: number
   isAnimated: boolean
+  // Background parameters
+  backgroundColor: string
   // Fractal specific parameters
   fractalType: string
   fractalIterations: number
@@ -39,17 +41,29 @@ const colorPalettes = {
   monochrome: ["#000000", "#404040", "#808080", "#C0C0C0", "#FFFFFF"],
 } as const
 
+const backgroundColors = {
+  dark: { primary: "#1a1a2e", secondary: "#16213e" },
+  light: { primary: "#f8f9fa", secondary: "#e9ecef" },
+  sunset: { primary: "#2c1810", secondary: "#4a1c1c" },
+  ocean: { primary: "#0a1929", secondary: "#1e3a8a" },
+  forest: { primary: "#1a2e1a", secondary: "#2d5016" },
+  cosmic: { primary: "#1a1a2e", secondary: "#2c1810" },
+  fire: { primary: "#2c1810", secondary: "#4a1c1c" },
+  custom: { primary: "#1a1a2e", secondary: "#16213e" },
+} as const
+
 type PaletteKey = keyof typeof colorPalettes
 
 /* ---------- Page Component ---------- */
 
 export default function AlgorithmicArtGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
   const gifReady = useGifJs()
   const [recording, setRecording] = useState(false)
   const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
   const [paletteSelection, setPaletteSelection] = useState("sunset")
+  const [zoomLevel, setZoomLevel] = useState(1)
 
   useEffect(() => {
     const stored = localStorage.getItem("customPalettes")
@@ -66,6 +80,7 @@ export default function AlgorithmicArtGenerator() {
     opacity: 0.7,
     complexity: 3,
     isAnimated: true,
+    backgroundColor: "dark",
     fractalType: "mandala",
     fractalIterations: 100,
     fractalScale: 0.5,
@@ -600,47 +615,54 @@ export default function AlgorithmicArtGenerator() {
   )
 
   const drawArt = useCallback(
-    (time = 0) => {
+    (time?: number) => {
+      const currentTime = time ?? 0
       const canvas = canvasRef.current
       if (!canvas) return
       const ctx = canvas.getContext("2d")
       if (!ctx) return
 
-      // Background
+      // Background - adjust for zoom level to ensure complete coverage
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      // Calculate the effective canvas size considering zoom
+      const effectiveWidth = canvas.width / zoomLevel
+      const effectiveHeight = canvas.height / zoomLevel
+      
+      const bgColors = backgroundColors[parameters.backgroundColor as keyof typeof backgroundColors]
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
         0,
         canvas.width / 2,
         canvas.height / 2,
-        Math.min(canvas.width, canvas.height) / 2,
+        Math.max(effectiveWidth, effectiveHeight) / 2,
       )
-      gradient.addColorStop(0, "#1a1a2e")
-      gradient.addColorStop(1, "#16213e")
+      gradient.addColorStop(0, bgColors.primary)
+      gradient.addColorStop(1, bgColors.secondary)
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       // Pattern
       switch (parameters.pattern) {
         case "circles":
-          drawCirclePattern(ctx, time)
+          drawCirclePattern(ctx, currentTime)
           break
         case "triangles":
-          drawTrianglePattern(ctx, time)
+          drawTrianglePattern(ctx, currentTime)
           break
         case "lines":
-          drawLinePattern(ctx, time)
+          drawLinePattern(ctx, currentTime)
           break
         case "spiral":
-          drawSpiral(ctx, time)
+          drawSpiral(ctx, currentTime)
           break
         case "fractal":
-          drawFractal(ctx, time)
+          drawFractal(ctx, currentTime)
           break
       }
     },
-    [parameters, drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawFractal],
+    [parameters, zoomLevel, drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawFractal],
   )
 
   /* ---------- Animation Loop ---------- */
@@ -694,6 +716,7 @@ export default function AlgorithmicArtGenerator() {
       ...Object.keys(colorPalettes),
       ...Object.keys(customPalettes).map((n) => `custom:${n}`),
     ]
+    const backgroundOptions = Object.keys(backgroundColors)
     const fractalTypes = ["mandelbrot", "julia", "sierpinski", "koch", "dragon", "mandala"]
 
     const paletteChoice = paletteKeys[Math.floor(Math.random() * paletteKeys.length)]
@@ -713,6 +736,7 @@ export default function AlgorithmicArtGenerator() {
       opacity: Number((Math.random() * 0.5 + 0.3).toFixed(2)),
       complexity: Math.floor(Math.random() * 5) + 1,
       isAnimated: Math.random() > 0.3,
+      backgroundColor: backgroundOptions[Math.floor(Math.random() * backgroundOptions.length)],
       fractalType: fractalTypes[Math.floor(Math.random() * fractalTypes.length)],
       fractalIterations: Math.floor(Math.random() * 200) + 50,
       fractalScale: Number((Math.random() * 0.8 + 0.2).toFixed(2)),
@@ -852,6 +876,34 @@ export default function AlgorithmicArtGenerator() {
                   <ColorPaletteEditor onSave={saveCustomPalette} />
                 </div>
 
+                {/* Background Color */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Background Color</Label>
+                  <Select value={parameters.backgroundColor} onValueChange={(v) => updateParameter("backgroundColor", v)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      {Object.keys(backgroundColors).map((key) => {
+                        const bgColor = backgroundColors[key as keyof typeof backgroundColors]
+                        return (
+                          <SelectItem key={key} value={key}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border border-slate-600"
+                                style={{ 
+                                  background: `linear-gradient(45deg, ${bgColor.primary} 0%, ${bgColor.secondary} 100%)` 
+                                }}
+                              />
+                              {key.charAt(0).toUpperCase() + key.slice(1)}
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Sliders */}
                 {[
                   ["shapeCount", "Shape Count", 10, 200, 5, parameters.shapeCount],
@@ -875,6 +927,21 @@ export default function AlgorithmicArtGenerator() {
                     />
                   </div>
                 ))}
+
+                {/* Zoom Slider */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">
+                    Zoom: {zoomLevel.toFixed(2).replace(/\.00$/, "")}
+                  </Label>
+                  <Slider
+                    value={[zoomLevel]}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    onValueChange={([v]) => setZoomLevel(v)}
+                    className="[&_[role=slider]]:bg-blue-500"
+                  />
+                </div>
 
                 {/* Fractal Type (only show when fractal pattern is selected) */}
                 {parameters.pattern === "fractal" && (
@@ -952,8 +1019,12 @@ export default function AlgorithmicArtGenerator() {
           {/* Canvas */}
           <section className="lg:col-span-3">
             <Card className="bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]">
-              <CardContent className="p-0 h-full">
-                <canvas ref={canvasRef} className="w-full h-full rounded-lg" style={{ display: "block" }} />
+              <CardContent className="p-0 h-full overflow-auto flex items-center justify-center">
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-full rounded-lg"
+                  style={{ display: "block", transform: `scale(${zoomLevel})`, transformOrigin: "center" }}
+                />
               </CardContent>
             </Card>
           </section>
