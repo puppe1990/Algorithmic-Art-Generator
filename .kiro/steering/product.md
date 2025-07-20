@@ -6,10 +6,11 @@ A beautiful, interactive web application for creating generative algorithmic art
 
 ### Core Features
 - **Real-time Art Generation**: Create algorithmic patterns with live preview
-- **Multiple Pattern Types**: Circles, triangles, lines, and spiral patterns
+- **Multiple Pattern Types**: Circles, triangles, lines, spiral patterns, and fractals
+- **Fractal Art**: 6 types of fractals (Mandelbrot, Julia, Sierpinski, Koch Snowflake, Dragon Curve, Mandala)
 - **Customizable Color Palettes**: 6 pre-defined color schemes (sunset, ocean, forest, cosmic, fire, monochrome)
-- **Interactive Controls**: Adjust shape count, size, animation speed, rotation, opacity, and complexity
-- **Animation Support**: Toggle between static and animated art
+- **Interactive Controls**: Adjust shape count, size, animation speed, rotation, opacity, complexity, and fractal-specific parameters
+- **Animation Support**: Toggle between static and animated art with zoom and rotation effects
 - **Export Options**: Save as PNG (static) or animated GIF
 - **Responsive Design**: Works on desktop and mobile devices
 
