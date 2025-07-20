@@ -20,7 +20,16 @@ import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Download, Shuffle, Play, Pause, Film, Loader2 } from "lucide-react"
+import {
+  Download,
+  Shuffle,
+  Play,
+  Pause,
+  Film,
+  Loader2,
+  Maximize,
+  Minimize,
+} from "lucide-react"
 import { useGifJs } from "@/components/gif-recorder"
 // import useAudioInput from "@/hooks/use-audio-input"
 import { addItem, GalleryItem } from "@/lib/gallery"
@@ -42,6 +51,8 @@ export default function AlgorithmicArtGenerator() {
   const [recording, setRecording] = useState(false)
   const [videoRecording, setVideoRecording] = useState(false)
   const [videoProgress, setVideoProgress] = useState(0)
+  const [isFullScreen, setIsFullScreen] = useState(false)
+  const fullScreenRef = useRef<HTMLDivElement>(null)
   const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
   const [paletteSelection, setPaletteSelection] = useState("sunset")
   const [zoomLevel, setZoomLevel] = useState(1)
@@ -59,6 +70,12 @@ export default function AlgorithmicArtGenerator() {
     if (stored) setCustomPalettes(JSON.parse(stored))
     const storedBg = localStorage.getItem("customBackground")
     if (storedBg) setCustomBackground(JSON.parse(storedBg))
+  }, [])
+
+  useEffect(() => {
+    const handleChange = () => setIsFullScreen(!!document.fullscreenElement)
+    document.addEventListener("fullscreenchange", handleChange)
+    return () => document.removeEventListener("fullscreenchange", handleChange)
   }, [])
 
   const [parameters, setParameters] = useState<ArtParameters>({
@@ -213,6 +230,14 @@ export default function AlgorithmicArtGenerator() {
   }, [drawArt])
 
   /* ---------- Utility Actions ---------- */
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      fullScreenRef.current?.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
+  }
 
   const randomizeParameters = () => {
     const patterns = ["circles", "triangles", "lines", "stars", "spiral", "fractal"]
@@ -382,7 +407,10 @@ export default function AlgorithmicArtGenerator() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div
+          ref={fullScreenRef}
+          className={`grid grid-cols-1 gap-6 ${isFullScreen ? '' : 'lg:grid-cols-4'}`}
+        >
           {/* Control Panel */}
           <aside className="lg:col-span-1 space-y-4">
             <Card className="bg-slate-800 border-slate-700">
@@ -405,6 +433,18 @@ export default function AlgorithmicArtGenerator() {
                       className="border-slate-600 text-slate-300 hover:bg-slate-700"
                     >
                       {parameters.isAnimated ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={toggleFullScreen}
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    >
+                      {isFullScreen ? (
+                        <Minimize className="w-4 h-4" />
+                      ) : (
+                        <Maximize className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </CardTitle>
@@ -640,7 +680,9 @@ export default function AlgorithmicArtGenerator() {
 
           {/* Canvas */}
           <section className="lg:col-span-3">
-            <Card className="bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]">
+            <Card
+              className={`bg-slate-800 border-slate-700 ${isFullScreen ? 'h-[80vh]' : 'h-[600px] lg:h-[800px]'}`}
+            >
               <CardContent className="p-0 h-full overflow-auto flex items-center justify-center">
                 <canvas
                   ref={canvasRef}
