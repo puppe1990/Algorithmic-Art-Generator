@@ -464,8 +464,8 @@ export default function AlgorithmicArtGenerator() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Control Panel */}
-          <aside className="lg:col-span-1 space-y-4">
+          {/* Control Panel - Hidden in fullscreen */}
+          <aside className={`lg:col-span-1 space-y-4 ${isFullscreen ? 'hidden' : ''}`}>
             <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
@@ -495,7 +495,7 @@ export default function AlgorithmicArtGenerator() {
                 {/* Pattern */}
                 <div className="space-y-2">
                   <Label className="text-slate-300">Pattern</Label>
-                  <Select value={parameters.pattern} onValueChange={(v) => updateParameter("pattern", v)}>
+                                          <Select value={parameters.pattern} onValueChange={(v: string) => updateParameter("pattern", v)}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -533,7 +533,7 @@ export default function AlgorithmicArtGenerator() {
                 {/* Palette */}
                 <div className="space-y-2">
                   <Label className="text-slate-300">Color Palette</Label>
-                  <Select value={paletteSelection} onValueChange={handlePaletteChange}>
+                                          <Select value={paletteSelection} onValueChange={(v: string) => handlePaletteChange(v)}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -730,7 +730,7 @@ export default function AlgorithmicArtGenerator() {
           </aside>
 
           {/* Canvas */}
-          <section className="lg:col-span-3">
+          <section className={`${isFullscreen ? 'col-span-1' : 'lg:col-span-3'}`}>
             <Card
               ref={boardRef}
               className="relative bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]"
@@ -744,12 +744,142 @@ export default function AlgorithmicArtGenerator() {
                 {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                 <span className="sr-only">Toggle Fullscreen</span>
               </Button>
-              <CardContent className="p-0 h-full overflow-auto flex items-center justify-center">
+              <CardContent className="p-0 h-full overflow-auto flex items-center justify-center relative">
                 <canvas
                   ref={canvasRef}
                   className="w-full h-full rounded-lg"
                   style={{ display: "block", transform: `scale(${zoomLevel})`, transformOrigin: "center" }}
                 />
+                
+                {/* Floating Controls - Only visible in fullscreen */}
+                {isFullscreen && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-4">
+                    <Card className="bg-slate-800/95 border-slate-700 backdrop-blur-sm">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                          {/* Pattern */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">Pattern</Label>
+                            <Select value={parameters.pattern} onValueChange={(v: string) => updateParameter("pattern", v)}>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-700 border-slate-600">
+                                <SelectItem value="circles">Circles</SelectItem>
+                                <SelectItem value="triangles">Triangles</SelectItem>
+                                <SelectItem value="lines">Lines</SelectItem>
+                                <SelectItem value="stars">Stars</SelectItem>
+                                <SelectItem value="spiral">Spiral</SelectItem>
+                                <SelectItem value="fractal">Fractal</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Color Palette */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">Colors</Label>
+                            <Select value={paletteSelection} onValueChange={(v: string) => handlePaletteChange(v)}>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-700 border-slate-600">
+                                {Object.keys(colorPalettes).map((key) => (
+                                  <SelectItem key={key} value={key}>
+                                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Animation Speed */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Speed: {parameters.animationSpeed.toFixed(1)}
+                            </Label>
+                            <Slider
+                              value={[parameters.animationSpeed]}
+                              min={0.1}
+                              max={5}
+                              step={0.1}
+                              onValueChange={([v]) => updateParameter("animationSpeed", v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+
+                          {/* Opacity */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Opacity: {parameters.opacity.toFixed(2)}
+                            </Label>
+                            <Slider
+                              value={[parameters.opacity]}
+                              min={0.1}
+                              max={1}
+                              step={0.05}
+                              onValueChange={([v]) => updateParameter("opacity", v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+
+                          {/* Zoom */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Zoom: {zoomLevel.toFixed(1)}
+                            </Label>
+                            <Slider
+                              value={[zoomLevel]}
+                              min={0.5}
+                              max={2}
+                              step={0.1}
+                              onValueChange={([v]) => setZoomLevel(v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+
+                          {/* Animation Toggle */}
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="animation-fullscreen"
+                              checked={parameters.isAnimated}
+                              onCheckedChange={(c) => updateParameter("isAnimated", c)}
+                            />
+                            <Label htmlFor="animation-fullscreen" className="text-slate-300 text-xs">
+                              Animate
+                            </Label>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 mt-4 justify-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={randomizeParameters}
+                            className="border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent"
+                          >
+                            <Shuffle className="w-4 h-4" />
+                          </Button>
+                          <Button onClick={savePng} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                            <Download className="w-4 h-4 mr-1" />
+                            PNG
+                          </Button>
+                          {parameters.isAnimated && (
+                            <Button
+                              onClick={saveGif}
+                              disabled={!gifReady || recording}
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-60"
+                            >
+                              {recording ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Film className="w-4 h-4 mr-1" />}
+                              {recording ? "Recording…" : "GIF"}
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </section>
