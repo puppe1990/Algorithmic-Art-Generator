@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from "react"
 
+declare global {
+  interface Window {
+    GIF: {
+      new (options: Record<string, unknown>): {
+        addFrame: (canvas: HTMLCanvasElement, options: Record<string, unknown>) => void
+        on: (event: string, callback: (blob: Blob) => void) => void
+        render: () => void
+      }
+    }
+  }
+}
+
 /**
  * Loads gif.js in the browser and returns a boolean once it’s ready.
  */
@@ -10,7 +22,7 @@ export function useGifJs() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    if ((window as any).GIF) {
+    if (window.GIF) {
       setReady(true)
       return
     }
