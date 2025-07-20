@@ -1,6 +1,7 @@
 # Algorithmic Art Generator
 
 A beautiful, interactive web application for creating generative algorithmic art with real-time parameter controls and export capabilities.
+<img width="1563" height="945" alt="Screenshot 2025-07-20 at 00 06 01" src="https://github.com/user-attachments/assets/aae31b16-4346-4c7d-9fd9-8cd287652cf2" />
 
 ![Algorithmic Art Generator](https://img.shields.io/badge/Next.js-15.2.4-black?style=for-the-badge&logo=next.js)
 ![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
