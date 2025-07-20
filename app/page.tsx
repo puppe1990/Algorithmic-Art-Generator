@@ -753,10 +753,11 @@ export default function AlgorithmicArtGenerator() {
                 
                 {/* Floating Controls - Only visible in fullscreen */}
                 {isFullscreen && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-4">
-                    <Card className="bg-slate-800/95 border-slate-700 backdrop-blur-sm">
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-6xl px-4">
+                    <Card className="bg-slate-800/95 border-slate-700 backdrop-blur-sm max-h-96 overflow-y-auto">
                       <CardContent className="p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {/* First Row - Pattern, Colors, Background */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                           {/* Pattern */}
                           <div className="space-y-2">
                             <Label className="text-slate-300 text-xs">Pattern</Label>
@@ -777,7 +778,7 @@ export default function AlgorithmicArtGenerator() {
 
                           {/* Color Palette */}
                           <div className="space-y-2">
-                            <Label className="text-slate-300 text-xs">Colors</Label>
+                            <Label className="text-slate-300 text-xs">Color Palette</Label>
                             <Select value={paletteSelection} onValueChange={(v: string) => handlePaletteChange(v)}>
                               <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
                                 <SelectValue />
@@ -792,6 +793,89 @@ export default function AlgorithmicArtGenerator() {
                             </Select>
                           </div>
 
+                          {/* Background Color */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">Background</Label>
+                            <Select value={parameters.backgroundColor} onValueChange={(v: string) => updateParameter("backgroundColor", v)}>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-700 border-slate-600">
+                                {Object.keys(backgroundColors).map((key) => {
+                                  const bgColor = backgroundColors[key]
+                                  return (
+                                    <SelectItem key={key} value={key}>
+                                      <div className="flex items-center gap-2">
+                                        <div 
+                                          className="w-3 h-3 rounded border border-slate-600"
+                                          style={{ 
+                                            background: `linear-gradient(45deg, ${bgColor.primary} 0%, ${bgColor.secondary} 100%)` 
+                                          }}
+                                        />
+                                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                                      </div>
+                                    </SelectItem>
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Second Row - Fractal Type (if fractal pattern) */}
+                        {parameters.pattern === "fractal" && (
+                          <div className="mb-4">
+                            <div className="space-y-2">
+                              <Label className="text-slate-300 text-xs">Fractal Type</Label>
+                              <Select value={parameters.fractalType} onValueChange={(v: string) => updateParameter("fractalType", v)}>
+                                <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-700 border-slate-600">
+                                  <SelectItem value="mandelbrot">Mandelbrot Set</SelectItem>
+                                  <SelectItem value="julia">Julia Set</SelectItem>
+                                  <SelectItem value="sierpinski">Sierpinski Triangle</SelectItem>
+                                  <SelectItem value="koch">Koch Snowflake</SelectItem>
+                                  <SelectItem value="dragon">Dragon Curve</SelectItem>
+                                  <SelectItem value="mandala">Mandala Fractal</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Third Row - All Sliders */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                          {/* Shape Count */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Count: {parameters.shapeCount}
+                            </Label>
+                            <Slider
+                              value={[parameters.shapeCount]}
+                              min={10}
+                              max={200}
+                              step={5}
+                              onValueChange={([v]) => updateParameter("shapeCount", v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+
+                          {/* Shape Size */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Size: {parameters.shapeSize}
+                            </Label>
+                            <Slider
+                              value={[parameters.shapeSize]}
+                              min={5}
+                              max={50}
+                              step={1}
+                              onValueChange={([v]) => updateParameter("shapeSize", v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+
                           {/* Animation Speed */}
                           <div className="space-y-2">
                             <Label className="text-slate-300 text-xs">
@@ -803,6 +887,21 @@ export default function AlgorithmicArtGenerator() {
                               max={5}
                               step={0.1}
                               onValueChange={([v]) => updateParameter("animationSpeed", v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+
+                          {/* Rotation Speed */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Rotation: {parameters.rotationSpeed.toFixed(1)}
+                            </Label>
+                            <Slider
+                              value={[parameters.rotationSpeed]}
+                              min={0.1}
+                              max={5}
+                              step={0.1}
+                              onValueChange={([v]) => updateParameter("rotationSpeed", v)}
                               className="[&_[role=slider]]:bg-blue-500"
                             />
                           </div>
@@ -822,6 +921,49 @@ export default function AlgorithmicArtGenerator() {
                             />
                           </div>
 
+                          {/* Complexity */}
+                          <div className="space-y-2">
+                            <Label className="text-slate-300 text-xs">
+                              Complexity: {parameters.complexity}
+                            </Label>
+                            <Slider
+                              value={[parameters.complexity]}
+                              min={1}
+                              max={8}
+                              step={1}
+                              onValueChange={([v]) => updateParameter("complexity", v)}
+                              className="[&_[role=slider]]:bg-blue-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Fourth Row - Fractal Sliders (if fractal pattern) */}
+                        {parameters.pattern === "fractal" && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            {[
+                              ["fractalIterations", "Iterations", 10, 300, 10, parameters.fractalIterations],
+                              ["fractalScale", "Scale", 0.1, 1, 0.05, parameters.fractalScale],
+                              ["fractalAngle", "Angle", 0, Math.PI * 2, 0.1, parameters.fractalAngle],
+                            ].map(([key, label, min, max, step, value]) => (
+                              <div key={key as string} className="space-y-2">
+                                <Label className="text-slate-300 text-xs">
+                                  {label}: {Number(value).toFixed(2).replace(/\.00$/, "")}
+                                </Label>
+                                <Slider
+                                  value={[value as number]}
+                                  min={min as number}
+                                  max={max as number}
+                                  step={step as number}
+                                  onValueChange={([v]) => updateParameter(key as keyof ArtParameters, v)}
+                                  className="[&_[role=slider]]:bg-green-500"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Fifth Row - Zoom and Toggles */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                           {/* Zoom */}
                           <div className="space-y-2">
                             <Label className="text-slate-300 text-xs">
@@ -845,24 +987,49 @@ export default function AlgorithmicArtGenerator() {
                               onCheckedChange={(c) => updateParameter("isAnimated", c)}
                             />
                             <Label htmlFor="animation-fullscreen" className="text-slate-300 text-xs">
-                              Animate
+                              Enable Animation
                             </Label>
+                          </div>
+
+                          {/* Audio Reactive Toggle */}
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="audioReactive-fullscreen"
+                              checked={parameters.audioReactive}
+                              onCheckedChange={(c) => updateParameter("audioReactive", c)}
+                            />
+                            <Label htmlFor="audioReactive-fullscreen" className="text-slate-300 text-xs">
+                              Audio Reactive
+                            </Label>
+                          </div>
+
+                          {/* Randomize Button */}
+                          <div className="flex items-center">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={randomizeParameters}
+                              className="border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent"
+                            >
+                              <Shuffle className="w-4 h-4 mr-1" />
+                              Randomize
+                            </Button>
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 mt-4 justify-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={randomizeParameters}
-                            className="border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent"
-                          >
-                            <Shuffle className="w-4 h-4" />
-                          </Button>
+                        {/* Sixth Row - Download Buttons */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                           <Button onClick={savePng} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                             <Download className="w-4 h-4 mr-1" />
                             PNG
+                          </Button>
+                          <Button onClick={() => saveHighResPng()} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                            <FileImage className="w-4 h-4 mr-1" />
+                            HD PNG
+                          </Button>
+                          <Button onClick={saveSvg} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                            <FileCode className="w-4 h-4 mr-1" />
+                            SVG
                           </Button>
                           {parameters.isAnimated && (
                             <Button
@@ -873,6 +1040,21 @@ export default function AlgorithmicArtGenerator() {
                             >
                               {recording ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Film className="w-4 h-4 mr-1" />}
                               {recording ? "Recording…" : "GIF"}
+                            </Button>
+                          )}
+                          {parameters.isAnimated && (
+                            <Button
+                              onClick={saveVideo}
+                              disabled={videoRecording}
+                              size="sm"
+                              className="bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-60"
+                            >
+                              {videoRecording ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              ) : (
+                                <Film className="w-4 h-4 mr-1" />
+                              )}
+                              {videoRecording ? `Recording… ${videoProgress}%` : "Video"}
                             </Button>
                           )}
                         </div>
