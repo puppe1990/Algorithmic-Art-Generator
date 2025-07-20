@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
@@ -9,12 +10,14 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Download, Shuffle, Play, Pause, Film, Loader2 } from "lucide-react"
 import { useGifJs } from "@/components/gif-recorder"
+import { addItem, GalleryItem } from "@/lib/gallery"
+import ColorPaletteEditor from "@/components/color-palette-editor"
 
 /* ---------- Types & Constants ---------- */
 
 interface ArtParameters {
   pattern: string
-  colorPalette: string
+  colorPalette: string | string[]
   shapeCount: number
   shapeSize: number
   animationSpeed: number
@@ -22,6 +25,8 @@ interface ArtParameters {
   opacity: number
   complexity: number
   isAnimated: boolean
+  // Background parameters
+  backgroundColor: string
   // Fractal specific parameters
   fractalType: string
   fractalIterations: number
@@ -38,17 +43,36 @@ const colorPalettes = {
   monochrome: ["#000000", "#404040", "#808080", "#C0C0C0", "#FFFFFF"],
 } as const
 
+const backgroundColors = {
+  dark: { primary: "#1a1a2e", secondary: "#16213e" },
+  light: { primary: "#f8f9fa", secondary: "#e9ecef" },
+  sunset: { primary: "#2c1810", secondary: "#4a1c1c" },
+  ocean: { primary: "#0a1929", secondary: "#1e3a8a" },
+  forest: { primary: "#1a2e1a", secondary: "#2d5016" },
+  cosmic: { primary: "#1a1a2e", secondary: "#2c1810" },
+  fire: { primary: "#2c1810", secondary: "#4a1c1c" },
+  custom: { primary: "#1a1a2e", secondary: "#16213e" },
+} as const
+
 type PaletteKey = keyof typeof colorPalettes
 
 /* ---------- Page Component ---------- */
 
 export default function AlgorithmicArtGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
   const gifReady = useGifJs()
   const [recording, setRecording] = useState(false)
   const [videoRecording, setVideoRecording] = useState(false)
   const [videoProgress, setVideoProgress] = useState(0)
+  const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
+  const [paletteSelection, setPaletteSelection] = useState("sunset")
+  const [zoomLevel, setZoomLevel] = useState(1)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("customPalettes")
+    if (stored) setCustomPalettes(JSON.parse(stored))
+  }, [])
 
   const [parameters, setParameters] = useState<ArtParameters>({
     pattern: "circles",
@@ -60,6 +84,7 @@ export default function AlgorithmicArtGenerator() {
     opacity: 0.7,
     complexity: 3,
     isAnimated: true,
+    backgroundColor: "dark",
     fractalType: "mandala",
     fractalIterations: 100,
     fractalScale: 0.5,
@@ -68,12 +93,29 @@ export default function AlgorithmicArtGenerator() {
 
   const updateParameter = (key: keyof ArtParameters, value: any) => setParameters((prev) => ({ ...prev, [key]: value }))
 
+  const saveCustomPalette = (name: string, colors: string[]) => {
+    const updated = { ...customPalettes, [name]: colors };
+    setCustomPalettes(updated);
+    localStorage.setItem("customPalettes", JSON.stringify(updated));
+  }
+  const handlePaletteChange = (v: string) => {
+    setPaletteSelection(v)
+    if (v.startsWith("custom:")) {
+      updateParameter("colorPalette", customPalettes[v.slice(7)])
+    } else {
+      updateParameter("colorPalette", v)
+    }
+  }
+
+
   /* ---------- Drawing Helpers ---------- */
 
   const drawCirclePattern = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       for (let i = 0; i < shapeCount; i++) {
@@ -95,7 +137,9 @@ export default function AlgorithmicArtGenerator() {
   const drawTrianglePattern = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       for (let i = 0; i < shapeCount; i++) {
@@ -126,7 +170,9 @@ export default function AlgorithmicArtGenerator() {
   const drawLinePattern = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       ctx.lineWidth = 3
@@ -154,7 +200,9 @@ export default function AlgorithmicArtGenerator() {
   const drawSpiral = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       for (let i = 0; i < shapeCount; i++) {
@@ -173,12 +221,52 @@ export default function AlgorithmicArtGenerator() {
     [parameters],
   )
 
+  const drawStarPattern = useCallback(
+    (ctx: CanvasRenderingContext2D, time: number) => {
+      const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters
+      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const { width, height } = ctx.canvas
+
+      const points = 5 + Math.floor(complexity)
+      const step = Math.PI / points
+
+      for (let i = 0; i < shapeCount; i++) {
+        const angle = (i / shapeCount) * Math.PI * 2 + time * animationSpeed * 0.01
+        const radius = Math.min(width, height) * 0.35
+        const x = width / 2 + Math.cos(angle) * radius
+        const y = height / 2 + Math.sin(angle) * radius
+
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(angle + time * rotationSpeed * 0.01)
+        ctx.globalAlpha = opacity
+        ctx.fillStyle = colors[i % colors.length]
+
+        const outer = shapeSize
+        const inner = shapeSize * 0.5
+        ctx.beginPath()
+        for (let j = 0; j < points * 2; j++) {
+          const r = j % 2 === 0 ? outer : inner
+          const a = j * step
+          if (j === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+          else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r)
+        }
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
+      }
+    },
+    [parameters],
+  )
+
   /* ---------- Fractal Drawing Functions ---------- */
 
   const drawMandelbrotFractal = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { fractalIterations, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
       const imageData = ctx.createImageData(width, height)
       const data = imageData.data
@@ -227,7 +315,9 @@ export default function AlgorithmicArtGenerator() {
   const drawJuliaFractal = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { fractalIterations, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
       const imageData = ctx.createImageData(width, height)
       const data = imageData.data
@@ -273,7 +363,9 @@ export default function AlgorithmicArtGenerator() {
   const drawSierpinskiTriangle = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { fractalIterations, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       const drawTriangle = (x: number, y: number, size: number, depth: number) => {
@@ -307,7 +399,9 @@ export default function AlgorithmicArtGenerator() {
   const drawKochSnowflake = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { fractalIterations, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       const kochCurve = (x1: number, y1: number, x2: number, y2: number, depth: number) => {
@@ -361,7 +455,9 @@ export default function AlgorithmicArtGenerator() {
   const drawDragonCurve = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
       const { fractalIterations, opacity, complexity } = parameters
-      const colors = colorPalettes[parameters.colorPalette as PaletteKey]
+      const colors = Array.isArray(parameters.colorPalette)
+        ? parameters.colorPalette
+        : colorPalettes[parameters.colorPalette as PaletteKey]
       const { width, height } = ctx.canvas
 
       const dragonCurve = (x: number, y: number, length: number, angle: number, depth: number, direction: number) => {
@@ -561,47 +657,57 @@ export default function AlgorithmicArtGenerator() {
   )
 
   const drawArt = useCallback(
-    (time = 0) => {
+    (time?: number) => {
+      const currentTime = time ?? 0
       const canvas = canvasRef.current
       if (!canvas) return
       const ctx = canvas.getContext("2d")
       if (!ctx) return
 
-      // Background
+      // Background - adjust for zoom level to ensure complete coverage
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      // Calculate the effective canvas size considering zoom
+      const effectiveWidth = canvas.width / zoomLevel
+      const effectiveHeight = canvas.height / zoomLevel
+      
+      const bgColors = backgroundColors[parameters.backgroundColor as keyof typeof backgroundColors]
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
         0,
         canvas.width / 2,
         canvas.height / 2,
-        Math.min(canvas.width, canvas.height) / 2,
+        Math.max(effectiveWidth, effectiveHeight) / 2,
       )
-      gradient.addColorStop(0, "#1a1a2e")
-      gradient.addColorStop(1, "#16213e")
+      gradient.addColorStop(0, bgColors.primary)
+      gradient.addColorStop(1, bgColors.secondary)
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       // Pattern
       switch (parameters.pattern) {
         case "circles":
-          drawCirclePattern(ctx, time)
+          drawCirclePattern(ctx, currentTime)
           break
         case "triangles":
-          drawTrianglePattern(ctx, time)
+          drawTrianglePattern(ctx, currentTime)
           break
         case "lines":
-          drawLinePattern(ctx, time)
+          drawLinePattern(ctx, currentTime)
+          break
+        case "stars":
+          drawStarPattern(ctx, currentTime)
           break
         case "spiral":
-          drawSpiral(ctx, time)
+          drawSpiral(ctx, currentTime)
           break
         case "fractal":
-          drawFractal(ctx, time)
+          drawFractal(ctx, currentTime)
           break
       }
     },
-    [parameters, drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawFractal],
+    [parameters, zoomLevel, drawCirclePattern, drawTrianglePattern, drawLinePattern, drawStarPattern, drawSpiral, drawFractal],
   )
 
   /* ---------- Animation Loop ---------- */
@@ -650,13 +756,24 @@ export default function AlgorithmicArtGenerator() {
   /* ---------- Utility Actions ---------- */
 
   const randomizeParameters = () => {
-    const patterns = ["circles", "triangles", "lines", "spiral", "fractal"]
-    const palettes = Object.keys(colorPalettes)
+    const patterns = ["circles", "triangles", "lines", "stars", "spiral", "fractal"]
+    const paletteKeys = [
+      ...Object.keys(colorPalettes),
+      ...Object.keys(customPalettes).map((n) => `custom:${n}`),
+    ]
+    const backgroundOptions = Object.keys(backgroundColors)
     const fractalTypes = ["mandelbrot", "julia", "sierpinski", "koch", "dragon", "mandala"]
+
+    const paletteChoice = paletteKeys[Math.floor(Math.random() * paletteKeys.length)]
+    let palette: string | string[] = paletteChoice
+    setPaletteSelection(paletteChoice)
+    if (paletteChoice.startsWith("custom:")) {
+      palette = customPalettes[paletteChoice.slice(7)]
+    }
 
     setParameters({
       pattern: patterns[Math.floor(Math.random() * patterns.length)],
-      colorPalette: palettes[Math.floor(Math.random() * palettes.length)],
+      colorPalette: palette,
       shapeCount: Math.floor(Math.random() * 100) + 20,
       shapeSize: Math.floor(Math.random() * 40) + 10,
       animationSpeed: Number((Math.random() * 3 + 0.5).toFixed(1)),
@@ -664,6 +781,7 @@ export default function AlgorithmicArtGenerator() {
       opacity: Number((Math.random() * 0.5 + 0.3).toFixed(2)),
       complexity: Math.floor(Math.random() * 5) + 1,
       isAnimated: Math.random() > 0.3,
+      backgroundColor: backgroundOptions[Math.floor(Math.random() * backgroundOptions.length)],
       fractalType: fractalTypes[Math.floor(Math.random() * fractalTypes.length)],
       fractalIterations: Math.floor(Math.random() * 200) + 50,
       fractalScale: Number((Math.random() * 0.8 + 0.2).toFixed(2)),
@@ -678,8 +796,17 @@ export default function AlgorithmicArtGenerator() {
 
     const link = document.createElement("a")
     link.download = `algorithmic-art-${Date.now()}.png`
-    link.href = canvas.toDataURL()
+    const data = canvas.toDataURL()
+    link.href = data
     link.click()
+    const item: GalleryItem = {
+      id: Date.now().toString(),
+      type: 'png',
+      dataURL: data,
+      parameters,
+      timestamp: Date.now(),
+    }
+    addItem(item)
   }
 
   /* ---------- GIF Recording ---------- */
@@ -717,8 +844,20 @@ export default function AlgorithmicArtGenerator() {
       link.href = url
       link.download = `algorithmic-art-${Date.now()}.gif`
       link.click()
-      URL.revokeObjectURL(url)
-      setRecording(false)
+      const reader = new FileReader()
+      reader.onload = () => {
+        const item: GalleryItem = {
+          id: Date.now().toString(),
+          type: 'gif',
+          dataURL: reader.result as string,
+          parameters,
+          timestamp: Date.now(),
+        }
+        addItem(item)
+        URL.revokeObjectURL(url)
+        setRecording(false)
+      }
+      reader.readAsDataURL(blob)
     })
 
     gif.render()
@@ -778,6 +917,9 @@ export default function AlgorithmicArtGenerator() {
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Algorithmic Art Generator</h1>
           <p className="text-slate-300">Create beautiful generative art with customizable parameters</p>
+          <Link href="/gallery" className="text-blue-400 underline">
+            View Gallery
+          </Link>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -820,6 +962,7 @@ export default function AlgorithmicArtGenerator() {
                       <SelectItem value="circles">Circles</SelectItem>
                       <SelectItem value="triangles">Triangles</SelectItem>
                       <SelectItem value="lines">Lines</SelectItem>
+                      <SelectItem value="stars">Stars</SelectItem>
                       <SelectItem value="spiral">Spiral</SelectItem>
                       <SelectItem value="fractal">Fractal</SelectItem>
                     </SelectContent>
@@ -829,16 +972,50 @@ export default function AlgorithmicArtGenerator() {
                 {/* Palette */}
                 <div className="space-y-2">
                   <Label className="text-slate-300">Color Palette</Label>
-                  <Select value={parameters.colorPalette} onValueChange={(v) => updateParameter("colorPalette", v)}>
+                  <Select value={paletteSelection} onValueChange={handlePaletteChange}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-700 border-slate-600">
+                  <SelectContent className="bg-slate-700 border-slate-600">
                       {Object.keys(colorPalettes).map((key) => (
                         <SelectItem key={key} value={key}>
                           {key.charAt(0).toUpperCase() + key.slice(1)}
                         </SelectItem>
                       ))}
+                      {Object.keys(customPalettes).map((key) => (
+                        <SelectItem key={`custom:${key}`} value={`custom:${key}`}>
+                          {key}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <ColorPaletteEditor onSave={saveCustomPalette} />
+                </div>
+
+                {/* Background Color */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Background Color</Label>
+                  <Select value={parameters.backgroundColor} onValueChange={(v) => updateParameter("backgroundColor", v)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      {Object.keys(backgroundColors).map((key) => {
+                        const bgColor = backgroundColors[key as keyof typeof backgroundColors]
+                        return (
+                          <SelectItem key={key} value={key}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border border-slate-600"
+                                style={{ 
+                                  background: `linear-gradient(45deg, ${bgColor.primary} 0%, ${bgColor.secondary} 100%)` 
+                                }}
+                              />
+                              {key.charAt(0).toUpperCase() + key.slice(1)}
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -866,6 +1043,21 @@ export default function AlgorithmicArtGenerator() {
                     />
                   </div>
                 ))}
+
+                {/* Zoom Slider */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">
+                    Zoom: {zoomLevel.toFixed(2).replace(/\.00$/, "")}
+                  </Label>
+                  <Slider
+                    value={[zoomLevel]}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    onValueChange={([v]) => setZoomLevel(v)}
+                    className="[&_[role=slider]]:bg-blue-500"
+                  />
+                </div>
 
                 {/* Fractal Type (only show when fractal pattern is selected) */}
                 {parameters.pattern === "fractal" && (
@@ -958,8 +1150,12 @@ export default function AlgorithmicArtGenerator() {
           {/* Canvas */}
           <section className="lg:col-span-3">
             <Card className="bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]">
-              <CardContent className="p-0 h-full">
-                <canvas ref={canvasRef} className="w-full h-full rounded-lg" style={{ display: "block" }} />
+              <CardContent className="p-0 h-full overflow-auto flex items-center justify-center">
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-full rounded-lg"
+                  style={{ display: "block", transform: `scale(${zoomLevel})`, transformOrigin: "center" }}
+                />
               </CardContent>
             </Card>
           </section>
