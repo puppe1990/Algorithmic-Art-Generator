@@ -39,6 +39,7 @@ import { ArtParameters, AudioData } from "@/lib/types"
 import { colorPalettes, backgroundColors } from "@/lib/constants"
 import { drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawStarPattern } from "@/lib/patterns"
 import { drawFractal } from "@/lib/fractals"
+import { cn } from "@/lib/utils"
 
 /* ---------- Types & Constants ---------- */
 
@@ -412,9 +413,15 @@ export default function AlgorithmicArtGenerator() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div
+          ref={boardRef}
+          className={cn(
+            "gap-6",
+            isFullscreen ? "grid grid-cols-1" : "grid grid-cols-1 lg:grid-cols-4"
+          )}
+        >
           {/* Control Panel */}
-          <aside className="lg:col-span-1 space-y-4">
+          <aside className={cn("lg:col-span-1 space-y-4", isFullscreen && "order-last") }>
             <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
@@ -671,8 +678,10 @@ export default function AlgorithmicArtGenerator() {
           {/* Canvas */}
           <section className="lg:col-span-3">
             <Card
-              ref={boardRef}
-              className="relative bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]"
+              className={cn(
+                "relative bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]",
+                isFullscreen && "h-full"
+              )}
             >
               <Button
                 onClick={toggleFullscreen}
