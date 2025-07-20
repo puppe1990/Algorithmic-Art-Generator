@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
@@ -9,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Download, Shuffle, Play, Pause, Film, Loader2 } from "lucide-react"
 import { useGifJs } from "@/components/gif-recorder"
+import { addItem, GalleryItem } from "@/lib/gallery"
 
 /* ---------- Types & Constants ---------- */
 
@@ -676,8 +678,17 @@ export default function AlgorithmicArtGenerator() {
 
     const link = document.createElement("a")
     link.download = `algorithmic-art-${Date.now()}.png`
-    link.href = canvas.toDataURL()
+    const data = canvas.toDataURL()
+    link.href = data
     link.click()
+    const item: GalleryItem = {
+      id: Date.now().toString(),
+      type: 'png',
+      dataURL: data,
+      parameters,
+      timestamp: Date.now(),
+    }
+    addItem(item)
   }
 
   /* ---------- GIF Recording ---------- */
@@ -715,8 +726,20 @@ export default function AlgorithmicArtGenerator() {
       link.href = url
       link.download = `algorithmic-art-${Date.now()}.gif`
       link.click()
-      URL.revokeObjectURL(url)
-      setRecording(false)
+      const reader = new FileReader()
+      reader.onload = () => {
+        const item: GalleryItem = {
+          id: Date.now().toString(),
+          type: 'gif',
+          dataURL: reader.result as string,
+          parameters,
+          timestamp: Date.now(),
+        }
+        addItem(item)
+        URL.revokeObjectURL(url)
+        setRecording(false)
+      }
+      reader.readAsDataURL(blob)
     })
 
     gif.render()
@@ -730,6 +753,9 @@ export default function AlgorithmicArtGenerator() {
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Algorithmic Art Generator</h1>
           <p className="text-slate-300">Create beautiful generative art with customizable parameters</p>
+          <Link href="/gallery" className="text-blue-400 underline">
+            View Gallery
+          </Link>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
