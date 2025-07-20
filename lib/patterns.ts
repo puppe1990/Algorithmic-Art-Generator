@@ -75,7 +75,7 @@ export function drawLinePattern(
   audioData: AudioData,
 ) {
   const { volume, frequency } = audioData;
-  const { shapeCount, shapeSize, animationSpeed, rotationSpeed, opacity, complexity } = parameters;
+  const { shapeCount, animationSpeed, rotationSpeed, opacity, complexity } = parameters;
   const colors = Array.isArray(parameters.colorPalette)
     ? parameters.colorPalette
     : colorPalettes[parameters.colorPalette as PaletteKey];

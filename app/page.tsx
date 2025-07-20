@@ -1,6 +1,18 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+
+declare global {
+  interface Window {
+    GIF: {
+      new (options: Record<string, unknown>): {
+        addFrame: (canvas: HTMLCanvasElement, options: Record<string, unknown>) => void
+        on: (event: string, callback: (blob: Blob) => void) => void
+        render: () => void
+      }
+    }
+  }
+}
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,12 +22,12 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Download, Shuffle, Play, Pause, Film, Loader2 } from "lucide-react"
 import { useGifJs } from "@/components/gif-recorder"
-import useAudioInput from "@/hooks/use-audio-input"
+// import useAudioInput from "@/hooks/use-audio-input"
 import { addItem, GalleryItem } from "@/lib/gallery"
 import ColorPaletteEditor from "@/components/color-palette-editor"
 
 import { ArtParameters } from "@/lib/types"
-import { colorPalettes, backgroundColors, PaletteKey } from "@/lib/constants"
+import { colorPalettes, backgroundColors } from "@/lib/constants"
 import { drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawStarPattern } from "@/lib/patterns"
 import { drawFractal } from "@/lib/fractals"
 
@@ -58,9 +70,9 @@ export default function AlgorithmicArtGenerator() {
     fractalAngle: 0.5,
   })
 
-  const audioData = useAudioInput(parameters.audioReactive)
+  // const audioData = useAudioInput(parameters.audioReactive)
 
-  const updateParameter = (key: keyof ArtParameters, value: any) => setParameters((prev) => ({ ...prev, [key]: value }))
+  const updateParameter = <K extends keyof ArtParameters>(key: K, value: ArtParameters[K]) => setParameters((prev) => ({ ...prev, [key]: value }))
 
   const saveCustomPalette = (name: string, colors: string[]) => {
     const updated = { ...customPalettes, [name]: colors };
@@ -240,7 +252,7 @@ export default function AlgorithmicArtGenerator() {
     if (!gifReady || recording || !parameters.isAnimated) return
 
     const canvas = canvasRef.current
-    const GIF = (window as any).GIF as any
+    const GIF = window.GIF
     if (!canvas || !GIF) return
 
     setRecording(true)

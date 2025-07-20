@@ -342,7 +342,9 @@ export function drawMandalFractal(
       ctx.shadowColor = mandalaColors[colorIndex];
       ctx.shadowBlur = 3 + ring;
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const x = centerX + Math.cos(angle) * radius;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const y = centerY + Math.sin(angle) * radius;
 
       ctx.beginPath();
