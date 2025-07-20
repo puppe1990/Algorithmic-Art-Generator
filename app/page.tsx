@@ -20,7 +20,16 @@ import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Download, Shuffle, Play, Pause, Film, Loader2 } from "lucide-react"
+import {
+  Download,
+  Shuffle,
+  Play,
+  Pause,
+  Film,
+  Loader2,
+  Maximize,
+  Minimize,
+} from "lucide-react"
 import { useGifJs } from "@/components/gif-recorder"
 // import useAudioInput from "@/hooks/use-audio-input"
 import { addItem, GalleryItem } from "@/lib/gallery"
@@ -45,6 +54,8 @@ export default function AlgorithmicArtGenerator() {
   const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
   const [paletteSelection, setPaletteSelection] = useState("sunset")
   const [zoomLevel, setZoomLevel] = useState(1)
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [customBackground, setCustomBackground] = useState({
     primary: "#1a1a2e",
     secondary: "#16213e",
@@ -59,6 +70,15 @@ export default function AlgorithmicArtGenerator() {
     if (stored) setCustomPalettes(JSON.parse(stored))
     const storedBg = localStorage.getItem("customBackground")
     if (storedBg) setCustomBackground(JSON.parse(storedBg))
+  }, [])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement !== null)
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [])
 
   const [parameters, setParameters] = useState<ArtParameters>({
@@ -369,6 +389,16 @@ export default function AlgorithmicArtGenerator() {
     }, delay)
   }
 
+  const toggleFullscreen = () => {
+    const elem = boardRef.current
+    if (!elem) return
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(() => {})
+    } else {
+      document.exitFullscreen().catch(() => {})
+    }
+  }
+
   /* ---------- JSX ---------- */
 
   return (
@@ -640,7 +670,19 @@ export default function AlgorithmicArtGenerator() {
 
           {/* Canvas */}
           <section className="lg:col-span-3">
-            <Card className="bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]">
+            <Card
+              ref={boardRef}
+              className="relative bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]"
+            >
+              <Button
+                onClick={toggleFullscreen}
+                size="icon"
+                variant="outline"
+                className="absolute top-2 right-2 z-10 bg-slate-700 text-white hover:bg-slate-600"
+              >
+                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                <span className="sr-only">Toggle Fullscreen</span>
+              </Button>
               <CardContent className="p-0 h-full overflow-auto flex items-center justify-center">
                 <canvas
                   ref={canvasRef}
