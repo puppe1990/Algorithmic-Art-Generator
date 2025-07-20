@@ -27,6 +27,8 @@ import {
   Pause,
   Film,
   Loader2,
+  FileImage,
+  FileCode,
   Maximize,
   Minimize,
 } from "lucide-react"
@@ -133,11 +135,13 @@ export default function AlgorithmicArtGenerator() {
 
 
   const drawArt = useCallback(
-    (time?: number) => {
+    (time?: number, ctxOverride?: CanvasRenderingContext2D) => {
       const currentTime = time ?? 0
-      const canvas = canvasRef.current
+      const canvas = ctxOverride
+        ? (ctxOverride.canvas as HTMLCanvasElement)
+        : canvasRef.current
       if (!canvas) return
-      const ctx = canvas.getContext("2d")
+      const ctx = ctxOverride ?? canvas.getContext("2d")
       if (!ctx) return
 
       // Background - adjust for zoom level to ensure complete coverage
@@ -282,6 +286,53 @@ export default function AlgorithmicArtGenerator() {
     const item: GalleryItem = {
       id: Date.now().toString(),
       type: 'png',
+      dataURL: data,
+      parameters,
+      timestamp: Date.now(),
+    }
+    addItem(item)
+  }
+
+  const saveHighResPng = (scale = 4) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const off = document.createElement("canvas")
+    off.width = canvas.width * scale
+    off.height = canvas.height * scale
+    const ctx = off.getContext("2d")
+    if (!ctx) return
+    drawArt(performance.now(), ctx)
+    const data = off.toDataURL()
+    const link = document.createElement("a")
+    link.download = `algorithmic-art-${Date.now()}-hd.png`
+    link.href = data
+    link.click()
+    const item: GalleryItem = {
+      id: Date.now().toString(),
+      type: 'png',
+      dataURL: data,
+      parameters,
+      timestamp: Date.now(),
+    }
+    addItem(item)
+  }
+
+  const saveSvg = async () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const { default: C2S } = await import('canvas2svg')
+    const ctx = new C2S(canvas.width, canvas.height)
+    drawArt(performance.now(), ctx)
+    const svg = ctx.getSerializedSvg()
+    const data =
+      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+    const link = document.createElement('a')
+    link.download = `algorithmic-art-${Date.now()}.svg`
+    link.href = data
+    link.click()
+    const item: GalleryItem = {
+      id: Date.now().toString(),
+      type: 'svg',
       dataURL: data,
       parameters,
       timestamp: Date.now(),
@@ -637,6 +688,16 @@ export default function AlgorithmicArtGenerator() {
                 <Button onClick={savePng} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   <Download className="w-4 h-4 mr-2" />
                   Save PNG
+                </Button>
+
+                <Button onClick={() => saveHighResPng()} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                  <FileImage className="w-4 h-4 mr-2" />
+                  Save HD PNG
+                </Button>
+
+                <Button onClick={saveSvg} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <FileCode className="w-4 h-4 mr-2" />
+                  Save SVG
                 </Button>
 
                 {parameters.isAnimated && (

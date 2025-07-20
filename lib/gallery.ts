@@ -2,7 +2,7 @@ import { ArtParameters } from './types'
 
 export interface GalleryItem {
   id: string
-  type: 'png' | 'gif'
+  type: 'png' | 'gif' | 'svg'
   dataURL: string
   parameters: ArtParameters
   timestamp: number
