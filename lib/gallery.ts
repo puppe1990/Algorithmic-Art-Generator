@@ -1,6 +1,6 @@
 export interface GalleryItem {
   id: string
-  type: 'png' | 'gif'
+  type: 'png' | 'gif' | 'svg'
   dataURL: string
   parameters: any
   timestamp: number
