@@ -45,7 +45,7 @@ const colorPalettes = {
   monochrome: ["#000000", "#404040", "#808080", "#C0C0C0", "#FFFFFF"],
 } as const
 
-const backgroundColors = {
+const defaultBackgroundColors = {
   dark: { primary: "#1a1a2e", secondary: "#16213e" },
   light: { primary: "#f8f9fa", secondary: "#e9ecef" },
   sunset: { primary: "#2c1810", secondary: "#4a1c1c" },
@@ -53,7 +53,6 @@ const backgroundColors = {
   forest: { primary: "#1a2e1a", secondary: "#2d5016" },
   cosmic: { primary: "#1a1a2e", secondary: "#2c1810" },
   fire: { primary: "#2c1810", secondary: "#4a1c1c" },
-  custom: { primary: "#1a1a2e", secondary: "#16213e" },
 } as const
 
 type PaletteKey = keyof typeof colorPalettes
@@ -70,10 +69,20 @@ export default function AlgorithmicArtGenerator() {
   const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
   const [paletteSelection, setPaletteSelection] = useState("sunset")
   const [zoomLevel, setZoomLevel] = useState(1)
+  const [customBackground, setCustomBackground] = useState({
+    primary: "#1a1a2e",
+    secondary: "#16213e",
+  })
+  const backgroundColors: Record<string, { primary: string; secondary: string }> = {
+    ...defaultBackgroundColors,
+    custom: customBackground,
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem("customPalettes")
     if (stored) setCustomPalettes(JSON.parse(stored))
+    const storedBg = localStorage.getItem("customBackground")
+    if (storedBg) setCustomBackground(JSON.parse(storedBg))
   }, [])
 
   const [parameters, setParameters] = useState<ArtParameters>({
@@ -110,6 +119,17 @@ export default function AlgorithmicArtGenerator() {
     } else {
       updateParameter("colorPalette", v)
     }
+  }
+
+  const handleCustomBackgroundChange = (
+    key: "primary" | "secondary",
+    value: string,
+  ) => {
+    setCustomBackground((prev) => {
+      const next = { ...prev, [key]: value }
+      localStorage.setItem("customBackground", JSON.stringify(next))
+      return next
+    })
   }
 
 
@@ -688,7 +708,7 @@ export default function AlgorithmicArtGenerator() {
       const effectiveWidth = canvas.width / zoomLevel
       const effectiveHeight = canvas.height / zoomLevel
       
-      const bgColors = backgroundColors[parameters.backgroundColor as keyof typeof backgroundColors]
+      const bgColors = backgroundColors[parameters.backgroundColor]
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
@@ -983,8 +1003,28 @@ export default function AlgorithmicArtGenerator() {
                       <SelectItem value="stars">Stars</SelectItem>
                       <SelectItem value="spiral">Spiral</SelectItem>
                       <SelectItem value="fractal">Fractal</SelectItem>
-                    </SelectContent>
+                  </SelectContent>
                   </Select>
+                  {parameters.backgroundColor === "custom" && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="color"
+                        value={customBackground.primary}
+                        onChange={(e) =>
+                          handleCustomBackgroundChange("primary", e.target.value)
+                        }
+                        className="h-8 w-8 p-0 border-none bg-transparent"
+                      />
+                      <input
+                        type="color"
+                        value={customBackground.secondary}
+                        onChange={(e) =>
+                          handleCustomBackgroundChange("secondary", e.target.value)
+                        }
+                        className="h-8 w-8 p-0 border-none bg-transparent"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Palette */}
@@ -1019,7 +1059,7 @@ export default function AlgorithmicArtGenerator() {
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600">
                       {Object.keys(backgroundColors).map((key) => {
-                        const bgColor = backgroundColors[key as keyof typeof backgroundColors]
+                        const bgColor = backgroundColors[key]
                         return (
                           <SelectItem key={key} value={key}>
                             <div className="flex items-center gap-2">
