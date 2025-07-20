@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { getItems, removeItem, GalleryItem } from "@/lib/gallery"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -45,7 +46,7 @@ export default function GalleryPage() {
                   <CardTitle className="text-base text-white">{new Date(item.timestamp).toLocaleString()}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 space-y-2">
-                  <img src={item.dataURL} alt="art" className="rounded" />
+                  <Image src={item.dataURL} alt="art" width={200} height={200} className="rounded w-full h-auto" />
                   <div className="flex justify-between">
                     <Button size="sm" onClick={() => handleDownload(item)} className="bg-blue-600 hover:bg-blue-700 text-white">
                       Download
