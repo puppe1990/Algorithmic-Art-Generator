@@ -862,10 +862,10 @@ export default function AlgorithmicArtGenerator() {
     addItem(item)
   }
 
-  const saveSvg = () => {
+  const saveSvg = async () => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const C2S = require('canvas2svg')
+    const { default: C2S } = await import('canvas2svg')
     const ctx = new C2S(canvas.width, canvas.height)
     drawArt(performance.now(), ctx)
     const svg = ctx.getSerializedSvg()
