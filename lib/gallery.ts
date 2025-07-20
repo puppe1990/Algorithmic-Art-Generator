@@ -1,8 +1,10 @@
+import { ArtParameters } from './types'
+
 export interface GalleryItem {
   id: string
   type: 'png' | 'gif' | 'svg'
   dataURL: string
-  parameters: any
+  parameters: ArtParameters
   timestamp: number
 }
 
