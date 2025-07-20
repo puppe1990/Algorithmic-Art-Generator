@@ -15,7 +15,7 @@ A beautiful, interactive web application for creating generative algorithmic art
 - **Customizable Color Palettes**: 6 pre-defined color schemes (sunset, ocean, forest, cosmic, fire, monochrome)
 - **Interactive Controls**: Adjust shape count, size, animation speed, rotation, opacity, and complexity
 - **Animation Support**: Toggle between static and animated art
-- **Export Options**: Save as PNG (static) or animated GIF
+- **Export Options**: Save as PNG (static), animated GIF, or WebM video
 - **Responsive Design**: Works on desktop and mobile devices
 - **Modern UI**: Built with Radix UI components and Tailwind CSS
 
@@ -93,6 +93,7 @@ Spiral patterns that expand outward with smooth animation.
 - **Animation Toggle**: Enable/disable animation with the play/pause button
 - **Export PNG**: Save the current frame as a PNG image
 - **Export GIF**: Create an animated GIF (3 seconds, 20 FPS)
+- **Export Video**: Record a WebM video (5 seconds, 30 FPS)
 
 ## 🛠️ Tech Stack
 

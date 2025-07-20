@@ -63,6 +63,8 @@ export default function AlgorithmicArtGenerator() {
   const animationRef = useRef<number | undefined>(undefined)
   const gifReady = useGifJs()
   const [recording, setRecording] = useState(false)
+  const [videoRecording, setVideoRecording] = useState(false)
+  const [videoProgress, setVideoProgress] = useState(0)
   const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
   const [paletteSelection, setPaletteSelection] = useState("sunset")
   const [zoomLevel, setZoomLevel] = useState(1)
@@ -861,6 +863,52 @@ export default function AlgorithmicArtGenerator() {
     gif.render()
   }
 
+  /* ---------- Video Recording ---------- */
+  const saveVideo = async () => {
+    if (videoRecording || !parameters.isAnimated) return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const stream = canvas.captureStream(30)
+    const recorder = new MediaRecorder(stream, {
+      mimeType: "video/webm;codecs=vp9",
+    })
+
+    const chunks: Blob[] = []
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data)
+    }
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "video/webm" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `algorithmic-art-${Date.now()}.webm`
+      link.click()
+      URL.revokeObjectURL(url)
+      setVideoRecording(false)
+    }
+
+    const frames = 150
+    const delay = 33 // ~30 FPS
+    let captured = 0
+    setVideoProgress(0)
+    setVideoRecording(true)
+    recorder.start()
+
+    const capture = setInterval(() => {
+      drawArt(performance.now() + captured * delay)
+      captured++
+      setVideoProgress(Math.round((captured / frames) * 100))
+      if (captured >= frames) {
+        clearInterval(capture)
+        recorder.stop()
+      }
+    }, delay)
+  }
+
   /* ---------- JSX ---------- */
 
   return (
@@ -1078,6 +1126,21 @@ export default function AlgorithmicArtGenerator() {
                   >
                     {recording ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Film className="w-4 h-4 mr-2" />}
                     {recording ? "Recording GIF…" : "Save Animated GIF"}
+                  </Button>
+                )}
+
+                {parameters.isAnimated && (
+                  <Button
+                    onClick={saveVideo}
+                    disabled={videoRecording}
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-60"
+                  >
+                    {videoRecording ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Film className="w-4 h-4 mr-2" />
+                    )}
+                    {videoRecording ? `Recording Video… ${videoProgress}%` : "Save Video"}
                   </Button>
                 )}
               </CardContent>
