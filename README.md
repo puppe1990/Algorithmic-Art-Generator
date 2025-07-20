@@ -11,7 +11,7 @@ A beautiful, interactive web application for creating generative algorithmic art
 ## ✨ Features
 
 - **Real-time Art Generation**: Create beautiful algorithmic patterns with live preview
-- **Multiple Pattern Types**: Circles, triangles, lines, and spiral patterns
+- **Multiple Pattern Types**: Circles, triangles, lines, stars, and spiral patterns
 - **Customizable Color Palettes**: 6 pre-defined color schemes (sunset, ocean, forest, cosmic, fire, monochrome)
 - **Interactive Controls**: Adjust shape count, size, animation speed, rotation, opacity, and complexity
 - **Animation Support**: Toggle between static and animated art
@@ -78,7 +78,7 @@ Spiral patterns that expand outward with smooth animation.
 
 ### Basic Controls
 
-1. **Pattern Selection**: Choose from circles, triangles, lines, or spiral patterns
+1. **Pattern Selection**: Choose from circles, triangles, lines, stars, or spiral patterns
 2. **Color Palette**: Select from 6 different color schemes
 3. **Shape Count**: Adjust the number of shapes (10-200)
 4. **Shape Size**: Control the size of individual shapes (5-50)
