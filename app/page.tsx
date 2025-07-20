@@ -26,13 +26,12 @@ import { useGifJs } from "@/components/gif-recorder"
 import { addItem, GalleryItem } from "@/lib/gallery"
 import ColorPaletteEditor from "@/components/color-palette-editor"
 
-import { ArtParameters } from "@/lib/types"
+import { ArtParameters, AudioData } from "@/lib/types"
 import { colorPalettes, backgroundColors } from "@/lib/constants"
 import { drawCirclePattern, drawTrianglePattern, drawLinePattern, drawSpiral, drawStarPattern } from "@/lib/patterns"
 import { drawFractal } from "@/lib/fractals"
 
 /* ---------- Types & Constants ---------- */
-
 
 /* ---------- Page Component ---------- */
 
@@ -46,10 +45,20 @@ export default function AlgorithmicArtGenerator() {
   const [customPalettes, setCustomPalettes] = useState<Record<string, string[]>>({})
   const [paletteSelection, setPaletteSelection] = useState("sunset")
   const [zoomLevel, setZoomLevel] = useState(1)
+  const [customBackground, setCustomBackground] = useState({
+    primary: "#1a1a2e",
+    secondary: "#16213e",
+  })
+  const allBackgroundColors: Record<string, { primary: string; secondary: string }> = {
+    ...backgroundColors,
+    custom: customBackground,
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem("customPalettes")
     if (stored) setCustomPalettes(JSON.parse(stored))
+    const storedBg = localStorage.getItem("customBackground")
+    if (storedBg) setCustomBackground(JSON.parse(storedBg))
   }, [])
 
   const [parameters, setParameters] = useState<ArtParameters>({
@@ -88,6 +97,17 @@ export default function AlgorithmicArtGenerator() {
     }
   }
 
+  const handleCustomBackgroundChange = (
+    key: "primary" | "secondary",
+    value: string,
+  ) => {
+    setCustomBackground((prev) => {
+      const next = { ...prev, [key]: value }
+      localStorage.setItem("customBackground", JSON.stringify(next))
+      return next
+    })
+  }
+
 
   /* ---------- Drawing Helpers ---------- */
 
@@ -107,7 +127,7 @@ export default function AlgorithmicArtGenerator() {
       const effectiveWidth = canvas.width / zoomLevel
       const effectiveHeight = canvas.height / zoomLevel
       
-      const bgColors = backgroundColors[parameters.backgroundColor as keyof typeof backgroundColors]
+      const bgColors = allBackgroundColors[parameters.backgroundColor] || allBackgroundColors.dark
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
@@ -121,22 +141,25 @@ export default function AlgorithmicArtGenerator() {
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+      // Create default audio data
+      const audioData: AudioData = { volume: 0, frequency: 0 }
+
       // Pattern
       switch (parameters.pattern) {
         case "circles":
-          drawCirclePattern(ctx, currentTime)
+          drawCirclePattern(ctx, currentTime, parameters, audioData)
           break
         case "triangles":
-          drawTrianglePattern(ctx, currentTime)
+          drawTrianglePattern(ctx, currentTime, parameters, audioData)
           break
         case "lines":
-          drawLinePattern(ctx, currentTime)
+          drawLinePattern(ctx, currentTime, parameters, audioData)
           break
         case "stars":
-          drawStarPattern(ctx, currentTime)
+          drawStarPattern(ctx, currentTime, parameters)
           break
         case "spiral":
-          drawSpiral(ctx, currentTime)
+          drawSpiral(ctx, currentTime, parameters, audioData)
           break
         case "fractal":
           drawFractal(ctx, currentTime, parameters)
@@ -402,8 +425,28 @@ export default function AlgorithmicArtGenerator() {
                       <SelectItem value="stars">Stars</SelectItem>
                       <SelectItem value="spiral">Spiral</SelectItem>
                       <SelectItem value="fractal">Fractal</SelectItem>
-                    </SelectContent>
+                  </SelectContent>
                   </Select>
+                  {parameters.backgroundColor === "custom" && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="color"
+                        value={customBackground.primary}
+                        onChange={(e) =>
+                          handleCustomBackgroundChange("primary", e.target.value)
+                        }
+                        className="h-8 w-8 p-0 border-none bg-transparent"
+                      />
+                      <input
+                        type="color"
+                        value={customBackground.secondary}
+                        onChange={(e) =>
+                          handleCustomBackgroundChange("secondary", e.target.value)
+                        }
+                        className="h-8 w-8 p-0 border-none bg-transparent"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Palette */}
@@ -438,7 +481,7 @@ export default function AlgorithmicArtGenerator() {
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600">
                       {Object.keys(backgroundColors).map((key) => {
-                        const bgColor = backgroundColors[key as keyof typeof backgroundColors]
+                        const bgColor = backgroundColors[key]
                         return (
                           <SelectItem key={key} value={key}>
                             <div className="flex items-center gap-2">
