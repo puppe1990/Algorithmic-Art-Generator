@@ -47,6 +47,7 @@ export default function AlgorithmicArtGenerator() {
   const animationRef = useRef<number>()
   const gifReady = useGifJs()
   const [recording, setRecording] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(1)
 
   const [parameters, setParameters] = useState<ArtParameters>({
     pattern: "circles",
@@ -819,6 +820,21 @@ export default function AlgorithmicArtGenerator() {
                   </div>
                 ))}
 
+                {/* Zoom Slider */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">
+                    Zoom: {zoomLevel.toFixed(2).replace(/\.00$/, "")}
+                  </Label>
+                  <Slider
+                    value={[zoomLevel]}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    onValueChange={([v]) => setZoomLevel(v)}
+                    className="[&_[role=slider]]:bg-blue-500"
+                  />
+                </div>
+
                 {/* Fractal Type (only show when fractal pattern is selected) */}
                 {parameters.pattern === "fractal" && (
                   <div className="space-y-2">
@@ -895,8 +911,12 @@ export default function AlgorithmicArtGenerator() {
           {/* Canvas */}
           <section className="lg:col-span-3">
             <Card className="bg-slate-800 border-slate-700 h-[600px] lg:h-[800px]">
-              <CardContent className="p-0 h-full">
-                <canvas ref={canvasRef} className="w-full h-full rounded-lg" style={{ display: "block" }} />
+              <CardContent className="p-0 h-full overflow-auto flex items-center justify-center">
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-full rounded-lg"
+                  style={{ display: "block", transform: `scale(${zoomLevel})`, transformOrigin: "center" }}
+                />
               </CardContent>
             </Card>
           </section>
